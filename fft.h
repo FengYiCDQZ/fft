@@ -41,8 +41,8 @@ complex *dit_recursion(complex *x, size_t n, size_t N, complex *W)
         x2[i] = x[i * 2 + 1];
     }
 
-    complex *X1 = new complex[n / 2];
-    complex *X2 = new complex[n / 2];
+    complex *X1;
+    complex *X2;
     complex *X = new complex[n];
     X1 = dit_recursion(x1, n / 2, N, W);
     X2 = dit_recursion(x2, n / 2, N, W);
