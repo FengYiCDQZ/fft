@@ -12,14 +12,13 @@ using complex = std::complex<float>;
 //蝶形操作
 inline void butter_fly(complex *X, complex *X1, complex *X2, size_t n, size_t N, complex *W)
 {
-    complex w,w0;
-    w = 1;
-    for (int i = 0; i < n / 2; i++)
+    complex w;
+    int k = N / n;
+    for (register int i = 0; i < n / 2; i++)
     {
-        w = W[i * N / n];
+        w = W[i];
         X[i] = X1[i] + w * X2[i];
         X[i + n / 2] = X1[i] - w * X2[i];
-        w *= w0;
     }
 }
 
@@ -83,12 +82,11 @@ complex *dit(complex *x, size_t N)
     rev[1] = N / 2;
     for (int i = 2; i < N; i++)
         rev[i] = (rev[i >> 1] >> 1) | ((i & 1) << (r - 1)); //magic
-#pragma omp parallel for num_threads(8)
     for (int i = 0; i < N; i += 2)
         swap(x[i], x[rev[i]]);
 
     complex *W = new complex[N];
-#pragma omp parallel for num_threads(8)
+#pragma omp parallel for num_threads(4)
     for (int i = 0; i < N; i++)
         W[i] = complex(cos(2 * M_PI * i / N), sin(2 * M_PI * i / N));
 
@@ -96,11 +94,16 @@ complex *dit(complex *x, size_t N)
     complex *X_ = new complex[N];
     for (int i = 0; i < N; i++)
         X[i] = x[i];
+    complex* W_ = new complex[N];
     for (size_t len = 2; len <= N; len *= 2)
     {
-#pragma omp parallel for num_threads(8)
+        int k = N / len;
+#pragma omp parallel for num_threads(4)
+        for (int i = 0; i < len; i++)
+            W_[i] = W[i * k];
+#pragma omp parallel for num_threads(4)
         for (int i = 0; i < N; i += len)
-            butter_fly(X_ + i, X + i, X + i + len / 2, len, N, W);
+            butter_fly(X_ + i, X + i, X + i + len / 2, len, N, W_);
         std::swap(X, X_);
     }
 
